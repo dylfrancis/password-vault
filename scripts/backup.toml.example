@@ -1,0 +1,39 @@
+# vw-backup configuration. Copy to scripts/backup.toml and fill in.
+# Relative paths resolve against the repo root (parent of scripts/).
+
+[paths]
+data_dir = "vw-data"                     # Vaultwarden /data volume
+config_files = [".env", "Caddyfile", "docker-compose.yml"]
+staging_dir = "backups/staging"          # scratch space, cleaned each run
+archive_dir = "backups/archive"          # local encrypted archives
+
+[encryption]
+# Escrow public key(s) — from `age-keygen` run at the key ceremony (see runbook).
+# Encryption needs NO private key on this host (ADR-0001).
+age_recipients = ["age1REPLACE_WITH_ESCROW_PUBLIC_KEY"]
+
+[remote]
+# rclone remote for offsite copies, e.g. "s3backup:company-vault-backups".
+# Configure with `rclone config`. Empty/omitted = local-only (WARNs every run).
+# rclone_remote = ""
+
+[retention]
+hourly_hours = 48      # keep every archive this many hours
+daily_days = 30        # then earliest-per-day up to this many days
+monthly_months = 12    # then earliest-per-month up to this many months
+
+[healthchecks]
+# Dead-man switch URLs (healthchecks.io). Pinged on success; <url>/fail on error.
+# backup_url = "https://hc-ping.com/REPLACE-backup-uuid"
+# drill_url  = "https://hc-ping.com/REPLACE-drill-uuid"
+
+[drill]
+image = "vaultwarden/server:1.36.0"      # keep in lockstep with docker-compose.yml
+row_delta_warn_pct = 10
+# identity_file: OPTIONAL host-resident age private key. If set, the weekly drill
+# decrypts the latest real archive (strongest verification) — but a host attacker
+# can then read historical backups, weakening ADR-0001's escrow guarantee.
+# Default (unset): drill restores a fresh plaintext staging set and only verifies
+# the encrypted archive's presence/header; decryption is proven quarterly by a
+# human retrieving the key from an Escrow Officer.
+# identity_file = ""

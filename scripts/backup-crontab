@@ -1,0 +1,13 @@
+# Backup sidecar schedule (BusyBox crond, UTC unless TZ set on the service).
+# $REPO_DIR is set by docker-compose to the repo path (identical on host and
+# in this container). Output → /proc/1/fd/1 so it lands in `docker logs vw-backup`.
+
+# Full Backup Set every 15 min (tier 2 of the RPO design; Litestream is tier 1
+# at seconds — see docs/adr/0002). Archives are ~17 KiB, cost is negligible.
+*/15 * * * * cd "$REPO_DIR" && python3 scripts/vw_backup.py backup > /proc/1/fd/1 2>&1
+
+# Weekly Restore Drill (Mondays 04:23)
+23 4 * * 1 cd "$REPO_DIR" && python3 scripts/vw_backup.py drill > /proc/1/fd/1 2>&1
+
+# Liveness probe + dead-man ping (scope item 5) — uncomment and set the UUID
+# */5 * * * * curl -fsSk -m 10 https://localhost/alive > /dev/null 2>&1 && curl -fsS -m 10 https://hc-ping.com/REPLACE-alive-uuid > /dev/null 2>&1

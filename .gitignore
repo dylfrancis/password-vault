@@ -1,8 +1,20 @@
 # Secrets — never commit
 .env
+scripts/backup.toml
+
+# Backup artifacts
+backups/
 
 # Runtime data (contains the vault DB, RSA keys, attachments)
 vw-data/
+vw-data.*/
+
+# Restore/drill outputs (contain decrypted vault data)
+dr-restore/
+restore-out/
+recover-out/
 caddy-data/
 caddy-config/
 logs/
+rclone-config/
+litestream.yml

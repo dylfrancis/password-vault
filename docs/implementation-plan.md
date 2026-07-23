@@ -10,16 +10,29 @@ Total effort: **1–2 hour core setup** plus a small extension toolkit (~2 hours
 |---|---|
 | Core stack (Docker Compose: Vaultwarden 1.36.0 + Caddy) | ✅ Done, validated locally at `https://localhost` |
 | Hardened config (`.env.example` prod template, Caddyfile headers/admin-block/access logs, `.gitignore`) | ✅ Done |
-| Extension toolkit (items 1–5 below) | ⏳ Next |
+| Item 1: backup + restore drill (`scripts/vw_backup.py`, runbook, ADR-0001) | ✅ Done — backup/drill/restore tested against the live local stack, both host-run and containerized |
+| Backup sidecar (`scripts/Dockerfile.backup` + crontab in compose) — portable deploy, no host deps beyond Docker | ✅ Done |
+| Two-tier RPO upgrade per stakeholder feedback (ADR-0002): Litestream WAL streaming (seconds) + Backup Sets every 15 min | ✅ Done — streamed restore verified with escrow key |
+| Items 2–5 | ⏳ Next |
 | Production cutover | ⏳ After toolkit |
 
 ## Agreed scope: the five extensions
 
 Ranked by value per effort. 1–4 ship as one small toolkit (stdlib Python + bash, ~150 lines total); 5 is a cron one-liner. No Vaultwarden fork — everything reads the DB/API from outside, keeping the upgrade path clean.
 
-### 1. Backup + restore verification (~30 min)
+### 1. Backup + restore verification (~45 min) — SPEC AGREED (grill session 2026-07-23)
 Highest value. E2E vault means data loss is unrecoverable by design — lose the DB or `rsa_key*` and every user is locked out permanently. Stock Vaultwarden ships nothing.
-Build: script doing SQLite online backup (`.backup` API, consistent while running) + `rsa_key*` + attachments + config, encrypted, shipped offsite, pruned per retention, plus a restore test into a scratch container.
+
+Agreed design (terms in `CONTEXT.md`; key custody in `docs/adr/0001`):
+- **RPO 1h, configurable** — hourly cron, interval a config variable.
+- **Full Backup Set every run**: SQLite online snapshot (`.backup` API — consistent without stopping the container) + `attachments/` + `sends/` + `rsa_key*` + `.env` + `Caddyfile` + compose file. No DB-only tier — keeps the 1h RPO honest for attachments.
+- **Encryption**: age, public-key mode (no secret on host); private key with 2 Escrow Officers outside the company vault.
+- **Destination**: local staging dir + S3-compatible bucket via rclone (provider = org choice, remote name is config).
+- **Retention**: 48 hourlies / 30 dailies / 12 monthlies, script-pruned; S3 lifecycle as backstop.
+- **Restore Drill**: weekly automated (scratch container: `/alive`, `PRAGMA integrity_check`, row-count sanity, keys present) + quarterly manual runbook walk including key retrieval from escrow.
+- **Dead-man switch**: healthchecks.io pings from backup job and drill (covers scope item 5's uptime probe in the same account).
+
+Org to-dos before prod: name the 2 Escrow Officers, pick the S3 provider/bucket, create the healthchecks.io account.
 
 ### 2. Audit log CLI — views + export (~30–40 min)
 Vaultwarden writes org events to the DB (`ORG_EVENTS_ENABLED=true`, already on) but offers only a basic web UI and **no export API**.

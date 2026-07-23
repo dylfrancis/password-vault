@@ -1,0 +1,23 @@
+# Litestream — continuous SQLite WAL streaming (RPO: seconds). Tier 1 of the
+# backup design (docs/adr/0002); the 15-min escrow-encrypted Backup Sets remain
+# the authoritative tier.
+# Copy to litestream.yml. For S3, put credentials in .env as
+# LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY and enable env_file
+# on the litestream service in docker-compose.yml.
+
+dbs:
+  - path: /data/db.sqlite3
+    replicas:
+      # Production: S3-compatible bucket (separate prefix from the archive tier)
+      # - url: s3://company-vault-backups/litestream
+      #   retention: 72h            # only needs to bridge gaps between Backup Sets
+      #   age:
+      #     recipients:
+      #       - age1REPLACE_WITH_ESCROW_PUBLIC_KEY
+
+      # Local/demo: file replica (docker-compose mounts ./backups/litestream here)
+      - url: file:///replica
+        retention: 72h
+        age:
+          recipients:
+            - age1REPLACE_WITH_ESCROW_PUBLIC_KEY

@@ -1,0 +1,12 @@
+# Backup sidecar: python + age + rclone + docker-cli + cron.
+# The repo is bind-mounted at runtime (same path as on the host, required for
+# docker-out-of-docker volume mounts during the restore drill) — nothing is
+# copied in except the crontab.
+FROM python:3.14-alpine
+
+RUN apk add --no-cache age rclone docker-cli curl tzdata
+
+COPY scripts/backup-crontab /etc/crontabs/root
+
+# crond in foreground; job output goes to the container log (via /proc/1/fd/1)
+CMD ["crond", "-f", "-l", "2"]
