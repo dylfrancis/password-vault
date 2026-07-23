@@ -299,24 +299,45 @@ with real numbers on both sides:
 
 ## 8. Repo map & quickstart
 
-```
-docker-compose.yml, Caddyfile, .env.example     the stack
-litestream.yml.example                          continuous DB replication
-scripts/    vw_backup.py vw_audit.py vw_access.py vw_health.py
-            Dockerfile.backup backup-crontab backup.toml.example
-docs/       vault-comparison.md implementation-plan.md
-docs/adr/   0001 key escrow · 0002 two-tier backup
-docs/runbooks/  backup-restore · audit-logs · offboarding-access-review
-CONTEXT.md  domain glossary + invariants
-```
+| Path | Contents |
+|---|---|
+| `docker-compose.yml`, `Caddyfile`, `.env.example` | The stack: vault, TLS proxy, replication, ops sidecar |
+| `litestream.yml.example` | Continuous DB replication config |
+| `scripts/setup.sh` | One-command bootstrap from a fresh clone |
+| `scripts/vw_backup.py` | Backup, prune, restore drill, restore |
+| `scripts/vw_audit.py` | Audit log views + incremental SIEM export |
+| `scripts/vw_access.py` | Offboarding rotation report + access-review matrix |
+| `scripts/vw_health.py` | Liveness, backup/replica freshness, disk checks |
+| `scripts/Dockerfile.backup`, `scripts/backup-crontab` | Ops sidecar image + its schedule |
+| `docs/vault-comparison.md` | Full 12-option comparison with sources |
+| `docs/implementation-plan.md` | Scope, status, decision log |
+| `docs/adr/` | 0001 key escrow · 0002 two-tier backup (incl. Postgres rejection) |
+| `docs/runbooks/` | backup-restore · audit-logs · offboarding-access-review |
+| `CONTEXT.md` | Domain glossary + invariants |
+
+One command from clone to running stack:
 
 ```bash
 git clone <repo> && cd password-vault
-cp .env.example .env                              # fill: domain, SMTP, admin token
-cp scripts/backup.toml.example scripts/backup.toml   # fill: age recipient, rclone remote
-cp litestream.yml.example litestream.yml             # fill: replica URL, age recipient
-docker compose up -d
+./scripts/setup.sh --demo     # local evaluation: https://localhost, no prompts
+./scripts/setup.sh            # production: prompts for domain + SMTP
 ```
+
+The script copies the three config templates, generates the age escrow keypair
+(host `age-keygen` if present, otherwise inside the backup image), wires the
+public key into both configs, starts the stack, and prints next steps. It is
+idempotent and never overwrites existing config. **It also prints the one
+non-negotiable manual step:** hand `escrow-key.txt` to two escrow officers and
+delete it from the host (ADR-0001).
+
+Configuration files, if you prefer doing it by hand (each has a commented
+`.example` template):
+
+| File | From | Fill in |
+|---|---|---|
+| `.env` | `.env.example` | `DOMAIN`; SMTP host/from/user/password (invites and emergency access need mail); `ADMIN_TOKEN` as an Argon2 hash if you want the admin panel (`docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash`); keep `SIGNUPS_ALLOWED=false` in production |
+| `scripts/backup.toml` | `scripts/backup.toml.example` | `age_recipients` (escrow public key); `rclone_remote` once a bucket exists (`docker compose exec backup rclone config`); healthchecks.io ping URLs when created |
+| `litestream.yml` | `litestream.yml.example` | age recipient; swap the local `file:///replica` block for the `s3://` block in production (S3 creds go in `.env` as `LITESTREAM_ACCESS_KEY_ID`/`LITESTREAM_SECRET_ACCESS_KEY`) |
 
 Four containers come up: the vault, TLS proxy, continuous replication, and the
 ops sidecar (backups every 15 min, weekly restore drill, audit export, health

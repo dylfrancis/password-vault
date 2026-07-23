@@ -20,3 +20,7 @@ rclone-config/
 litestream.yml
 scripts/vault-labels.toml
 evidence/
+escrow-key.txt
+
+# macOS
+.DS_Store
