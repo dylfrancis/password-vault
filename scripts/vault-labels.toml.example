@@ -1,0 +1,10 @@
+# Optional operator-maintained labels for encrypted collection names.
+# The server cannot decrypt collection names (E2E) — fill these in once from the
+# web UI so access reviews and offboarding reports read like English.
+# Copy to scripts/vault-labels.toml (gitignored — names are org metadata).
+#
+# Find UUIDs: python3 scripts/vw_access.py matrix   (shows unlabeled UUIDs)
+
+[collections]
+# "9bc25107-3b83-48df-9fb5-71f82b84f988" = "Engineering"
+# "0a1b2c3d-...."                         = "Finance"

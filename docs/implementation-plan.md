@@ -14,7 +14,8 @@ Total effort: **1–2 hour core setup** plus a small extension toolkit (~2 hours
 | Backup sidecar (`scripts/Dockerfile.backup` + crontab in compose) — portable deploy, no host deps beyond Docker | ✅ Done |
 | Two-tier RPO upgrade per stakeholder feedback (ADR-0002): Litestream WAL streaming (seconds) + Backup Sets every 15 min | ✅ Done — streamed restore verified with escrow key |
 | Item 2: audit log CLI (`scripts/vw_audit.py`: logins/events/summary views + incremental SIEM export, cron in sidecar) + real-client-IP fix in Caddyfile | ✅ Done — tested incl. failed-login capture from both event table and app log |
-| Items 3–5 | ⏳ Next |
+| Items 3+4: offboarding rotation report + access-review matrix (`scripts/vw_access.py`, runbook, label-map pattern for encrypted names) | ✅ Done — tested both offboard cases (org-wide owner, invited-never-confirmed) |
+| Item 5: healthchecks.io wiring | ⏳ Org task — create account, drop 3 UUIDs into `backup.toml` + crontab |
 | Production cutover | ⏳ After toolkit |
 
 ## Agreed scope: the five extensions

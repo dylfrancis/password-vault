@@ -18,3 +18,5 @@ caddy-config/
 logs/
 rclone-config/
 litestream.yml
+scripts/vault-labels.toml
+evidence/
