@@ -1,0 +1,28 @@
+{$DOMAIN} {
+	# Access log — evidence source for SOC 2 (who hit what, when, from where)
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50mb
+			roll_keep 12
+			roll_keep_for 8760h
+		}
+		format json
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	# Admin panel: private networks only (VPN/LAN). Remove block entirely once setup is done.
+	@admin {
+		path /admin*
+		not remote_ip private_ranges
+	}
+	respond @admin 403
+
+	reverse_proxy vaultwarden:80
+}
