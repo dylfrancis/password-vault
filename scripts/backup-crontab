@@ -12,5 +12,6 @@
 # Weekly Restore Drill (Mondays 04:23)
 23 4 * * 1 cd "$REPO_DIR" && python3 scripts/vw_backup.py drill > /proc/1/fd/1 2>&1
 
-# Liveness probe + dead-man ping (scope item 5) — uncomment and set the UUID
-# */5 * * * * curl -fsSk -m 10 https://localhost/alive > /dev/null 2>&1 && curl -fsS -m 10 https://hc-ping.com/REPLACE-alive-uuid > /dev/null 2>&1
+# Health check (scope item 5): /alive + backup/replica freshness + disk.
+# Pings [healthchecks].alive_url from backup.toml if configured.
+*/5 * * * * cd "$REPO_DIR" && python3 scripts/vw_health.py > /proc/1/fd/1 2>&1
