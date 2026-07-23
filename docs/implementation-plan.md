@@ -13,7 +13,8 @@ Total effort: **1–2 hour core setup** plus a small extension toolkit (~2 hours
 | Item 1: backup + restore drill (`scripts/vw_backup.py`, runbook, ADR-0001) | ✅ Done — backup/drill/restore tested against the live local stack, both host-run and containerized |
 | Backup sidecar (`scripts/Dockerfile.backup` + crontab in compose) — portable deploy, no host deps beyond Docker | ✅ Done |
 | Two-tier RPO upgrade per stakeholder feedback (ADR-0002): Litestream WAL streaming (seconds) + Backup Sets every 15 min | ✅ Done — streamed restore verified with escrow key |
-| Items 2–5 | ⏳ Next |
+| Item 2: audit log CLI (`scripts/vw_audit.py`: logins/events/summary views + incremental SIEM export, cron in sidecar) + real-client-IP fix in Caddyfile | ✅ Done — tested incl. failed-login capture from both event table and app log |
+| Items 3–5 | ⏳ Next |
 | Production cutover | ⏳ After toolkit |
 
 ## Agreed scope: the five extensions

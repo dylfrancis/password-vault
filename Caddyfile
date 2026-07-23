@@ -24,5 +24,9 @@
 	}
 	respond @admin 403
 
-	reverse_proxy vaultwarden:80
+	# Vaultwarden reads client IP from X-Real-IP (its IP_HEADER default).
+	# Without this, audit logs record Caddy's container IP instead of the client's.
+	reverse_proxy vaultwarden:80 {
+		header_up X-Real-IP {remote_host}
+	}
 }
